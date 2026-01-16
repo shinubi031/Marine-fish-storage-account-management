@@ -1,0 +1,1596 @@
+<!doctype html>
+<html lang="zh-CN">
+ <head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>海水鱼进销存管理系统（WPS同步协同版）</title>
+  <style>
+    /* WPS在线协同面板（新增） */
+    .wps-online-panel {
+      position: sticky;
+      top: 0;
+      z-index: 999;
+      background: #fff;
+      padding: 12px;
+      border-radius: 8px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+      margin-bottom: 10px;
+    }
+    .wps-online-panel .title {
+      font-size: 15px;
+      font-weight: 600;
+      margin-bottom: 8px;
+      color: #007dff;
+    }
+    .wps-online-panel .tip {
+      font-size: 13px;
+      color: #666;
+      margin-bottom: 8px;
+      line-height: 1.4;
+    }
+    .wps-online-btn-group {
+      display: flex;
+      gap: 8px;
+    }
+    .wps-online-btn {
+      flex: 1;
+      padding: 8px;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 14px;
+      color: white;
+      /* 增加按钮点击反馈 */
+      transition: background-color 0.2s;
+    }
+    /* 修复按钮禁用状态样式 */
+    .wps-online-btn:disabled {
+      background-color: #ccc !important;
+      cursor: not-allowed;
+      opacity: 0.7;
+    }
+    .create-wps-file-btn {
+      background: #4CAF50;
+    }
+    .create-wps-file-btn:hover:not(:disabled) {
+      background: #45a049;
+    }
+    .sync-to-wps-btn {
+      background: #007dff;
+    }
+    .sync-to-wps-btn:hover:not(:disabled) {
+      background: #0069d9;
+    }
+    .view-wps-data-btn {
+      background: #ff7d00;
+    }
+    .view-wps-data-btn:hover:not(:disabled) {
+      background: #e67000;
+    }
+
+    /* 原有样式保留（完整保留，不改动） */
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      font-family: Arial, sans-serif;
+    }
+    html {
+      touch-action: manipulation;
+      -webkit-tap-highlight-color: transparent;
+    }
+    body {
+      padding: 10px;
+      background-color: #f5f5f5;
+      font-size: 16px;
+    }
+    .tab-container {
+      width: 100%;
+      background-color: #fff;
+      border-radius: 12px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+      overflow: hidden;
+    }
+    .tabs {
+      display: flex;
+      border-bottom: 1px solid #ddd;
+      overflow-x: auto;
+      white-space: nowrap;
+      -webkit-overflow-scrolling: touch;
+    }
+    .tab-btn {
+      padding: 16px 20px;
+      border: none;
+      background: none;
+      cursor: pointer;
+      font-size: 16px;
+      font-weight: 500;
+      color: #666;
+      flex-shrink: 0;
+    }
+    .tab-btn.active {
+      color: #2196F3;
+      border-bottom: 3px solid #2196F3;
+    }
+    .tab-content {
+      padding: 15px;
+      display: none;
+    }
+    .tab-content.active {
+      display: block;
+    }
+    .form-group {
+      margin-bottom: 15px;
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 10px;
+    }
+    .form-group label {
+      width: 80px;
+      text-align: right;
+      font-size: 15px;
+    }
+    .form-group input {
+      padding: 12px 15px;
+      border: 1px solid #ddd;
+      border-radius: 8px;
+      flex: 1;
+      min-width: 200px;
+      font-size: 16px;
+      autocomplete: off;
+    }
+    .form-group input:focus {
+      border-color: #2196F3;
+      outline: none;
+      box-shadow: 0 0 0 2px rgba(33, 150, 243, 0.2);
+    }
+    .form-group button {
+      padding: 12px 24px;
+      background-color: #2196F3;
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 16px;
+    }
+    .form-group button:hover {
+      background-color: #1976D2;
+    }
+    .table-wrap {
+      width: 100%;
+      overflow-x: auto;
+      margin-top: 15px;
+      -webkit-overflow-scrolling: touch;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+    th, td {
+      padding: 12px 10px;
+      text-align: center;
+      border: 1px solid #ddd;
+      font-size: 14px;
+    }
+    th {
+      background-color: #f8f9fa;
+      font-weight: 600;
+      position: sticky;
+      top: 0;
+    }
+    .action-btn {
+      padding: 8px 12px;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      margin: 2px 0;
+      font-size: 14px;
+      min-height: 44px;
+      min-width: 80px;
+    }
+    .death-btn {
+      background-color: #f44336;
+      color: #fff;
+    }
+    .sell-btn {
+      background-color: #4CAF50;
+      color: #fff;
+    }
+    .edit-btn {
+      background-color: #ff9800;
+      color: #fff;
+    }
+    .delete-btn {
+      background-color: #f44336;
+      color: #fff;
+    }
+    .batch-btn {
+      margin: 10px 0;
+      padding: 12px 20px;
+      background-color: #9C27B0;
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      display: none;
+      width: 100%;
+      font-size: 16px;
+    }
+    .batch-btn.show {
+      display: block;
+    }
+    .stats {
+      margin-top: 20px;
+      padding: 20px 15px;
+      background-color: #f8f9fa;
+      border-radius: 8px;
+    }
+    .stats p {
+      margin: 10px 0;
+      font-size: 16px;
+      display: flex;
+      justify-content: space-between;
+    }
+    .stats span {
+      font-weight: bold;
+      color: #2196F3;
+      text-align: right;
+      min-width: 80px;
+      display: inline-block;
+    }
+    .profit-span {
+      color: #4CAF50;
+    }
+    input[type="checkbox"] {
+      width: 20px;
+      height: 20px;
+    }
+    .import-export-group {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 15px;
+    }
+    .import-export-btn {
+      flex: 1;
+      padding: 12px;
+      border: none;
+      border-radius: 8px;
+      color: #fff;
+      font-size: 16px;
+      cursor: pointer;
+    }
+    .export-btn {
+      background-color: #4CAF50;
+    }
+    .import-btn {
+      background-color: #ff9800;
+    }
+    .clear-btn {
+      background-color: #f44336;
+    }
+    #import-input, #excel-import-input, #wps-create-import-input {
+      display: none;
+    }
+    .modal {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background-color: rgba(0,0,0,0.5);
+      z-index: 1000;
+      align-items: center;
+      justify-content: center;
+    }
+    .modal-content {
+      background-color: #fff;
+      padding: 20px;
+      border-radius: 8px;
+      width: 90%;
+      max-width: 300px;
+    }
+    .modal-input {
+      width: 100%;
+      padding: 10px;
+      margin: 15px 0;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+    }
+    .modal-btn-group {
+      display: flex;
+      gap: 10px;
+    }
+    .modal-btn {
+      flex: 1;
+      padding: 10px;
+      border: none;
+      border-radius: 4px;
+      color: #fff;
+      cursor: pointer;
+    }
+    .confirm-btn {
+      background-color: #f44336;
+    }
+    .cancel-btn {
+      background-color: #999;
+    }
+    .loading {
+      display: none;
+      text-align: center;
+      padding: 20px;
+      color: #666;
+    }
+    .loading.show {
+      display: block;
+    }
+    tr.selected {
+      background-color: #e3f2fd !important;
+    }
+    .filter-group {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 15px;
+      flex-wrap: wrap;
+    }
+    .filter-input {
+      flex: 1;
+      min-width: 150px;
+    }
+  </style>
+  <!-- 引入Excel处理库（免费开源） -->
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+ </head>
+ <body>
+  <!-- WPS在线协同面板（修改：创建本地Excel表格） -->
+  <div class="wps-online-panel">
+    <div class="title">📊 WPS同步协同（本地Excel版）</div>
+    <div class="tip">1. 创建本地Excel表格 → 2. 点击同步导出最新数据 → 3. 点击查看导入更新数据</div>
+    <div class="wps-online-btn-group">
+      <!-- 新增：创建表格时支持手动导入的文件选择框 -->
+      <input type="file" id="wps-create-import-input" accept=".xlsx, .xls" onchange="importToNewWpsFile(event)">
+      <!-- 修复按钮ID和样式，确保可点击 -->
+      <button class="wps-online-btn create-wps-file-btn" id="createWpsBtn">🆕 创建本地Excel表格</button>
+      <button class="wps-online-btn sync-to-wps-btn" id="syncWpsBtn">🔄 同步导出数据</button>
+      <button class="wps-online-btn view-wps-data-btn" id="viewWpsBtn">👁️ 导入更新数据</button>
+    </div>
+    <div id="wps-status" style="margin-top:8px; font-size:13px; color:#666; text-align:center;">未创建本地Excel表格</div>
+  </div>
+
+  <!-- 原有页面结构 -->
+  <div class="tab-container">
+   <div class="tabs">
+    <!-- 修复：移除onclick属性，改为JS动态绑定，避免event对象问题 -->
+    <button class="tab-btn active" data-tab="purchase">进货录入</button>
+    <button class="tab-btn" data-tab="stock">库存管理</button>
+    <button class="tab-btn" data-tab="stats">数据统计</button>
+    <button class="tab-btn" data-tab="sale">出货录入</button>
+   </div>
+   <!-- 进货录入 -->
+   <div id="purchase" class="tab-content active">
+    <div class="filter-group">
+      <label>日期筛选：</label>
+      <input type="date" id="purchase-start-date" class="filter-input">
+      <input type="date" id="purchase-end-date" class="filter-input">
+      <button onclick="filterPurchaseByDate()">筛选</button>
+      <button onclick="resetPurchaseFilter()">重置</button>
+    </div>
+    <div class="form-group">
+     <label>鱼名称：</label> <input type="text" id="purchase-name" placeholder="输入海水鱼名称" inputmode="text">
+    </div>
+    <div class="form-group">
+     <label>单价：</label> <input type="text" id="purchase-price" placeholder="支持算式，如10+2" inputmode="numeric">
+    </div>
+    <div class="form-group">
+     <label>数量：</label> <input type="number" id="purchase-count" min="1" value="1" inputmode="numeric">
+    </div>
+    <div class="form-group">
+     <label>运费：</label> <input type="text" id="purchase-freight" placeholder="支持算式，如20+5" inputmode="numeric">
+    </div>
+    <div class="form-group">
+     <label>日期：</label> <input type="date" id="purchase-date">
+    </div>
+    <div class="form-group">
+     <button onclick="addPurchase()">添加进货记录</button>
+    </div>
+    <div class="loading" id="purchase-loading">加载中...</div>
+    <div class="table-wrap">
+     <table id="purchase-table">
+      <thead>
+       <tr>
+        <th>鱼名称</th>
+        <th>单价(元)</th>
+        <th>数量</th>
+        <th>运费(元)</th>
+        <th>进货成本(元)</th>
+        <th>日期</th>
+        <th>操作</th>
+       </tr>
+      </thead>
+      <tbody></tbody>
+     </table>
+    </div>
+   </div>
+   <!-- 库存管理 -->
+   <div id="stock" class="tab-content">
+    <div class="filter-group">
+      <label>搜索：</label>
+      <input type="text" id="stock-search" placeholder="输入鱼名称搜索" class="filter-input" oninput="searchStock()">
+    </div>
+    <button class="batch-btn" id="batch-death-btn" onclick="batchDeath()">批量标记死亡</button>
+    <div class="loading" id="stock-loading">加载中...</div>
+    <div class="table-wrap">
+     <table id="stock-table">
+      <thead>
+       <tr>
+        <th>进货日期</th>
+        <th>鱼名称</th>
+        <th>单价(元)</th>
+        <th>库存数量</th>
+        <th>操作</th>
+       </tr>
+      </thead>
+      <tbody></tbody>
+     </table>
+    </div>
+   </div>
+   <!-- 数据统计 -->
+   <div id="stats" class="tab-content">
+    <div class="import-export-group">
+     <button class="import-export-btn export-btn" onclick="exportData()">导出JSON数据</button>
+     <!-- 新增：Excel导出按钮 -->
+     <button class="import-export-btn export-btn" onclick="exportToExcel()">导出Excel数据</button>
+     <label class="import-export-btn import-btn" for="import-input">导入JSON数据</label>
+     <!-- 新增：Excel导入的label和input -->
+     <label class="import-export-btn import-btn" for="excel-import-input">导入Excel数据</label>
+     <button class="import-export-btn clear-btn" onclick="clearAllData()">清空所有数据</button>
+     <input type="file" id="import-input" accept=".json" onchange="importData(event)">
+     <!-- 修复：添加缺失的excel-import-input元素 -->
+     <input type="file" id="excel-import-input" accept=".xlsx, .xls" onchange="importFromExcel(event)">
+    </div>
+    <div class="stats">
+     <p>累计进货成本：<span id="total-purchase">0.00</span> 元</p>
+     <p>累计出货收入：<span id="total-sale">0.00</span> 元</p>
+     <p>当前库存总价值：<span id="total-stock-value">0.00</span> 元</p>
+     <p>总收益：<span id="total-profit" class="profit-span">0.00</span> 元</p>
+     <p>综合净收益：<span id="net-profit" class="profit-span">0.00</span> 元</p>
+    </div>
+   </div>
+   <!-- 出货录入 -->
+   <div id="sale" class="tab-content">
+    <div class="filter-group">
+      <label>日期筛选：</label>
+      <input type="date" id="sale-start-date" class="filter-input">
+      <input type="date" id="sale-end-date" class="filter-input">
+      <button onclick="filterSaleByDate()">筛选</button>
+      <button onclick="resetSaleFilter()">重置</button>
+    </div>
+    <div class="form-group">
+     <label>鱼名称：</label> <input type="text" id="sale-name" placeholder="输入海水鱼名称" inputmode="text">
+    </div>
+    <div class="form-group">
+     <label>售价：</label> <input type="text" id="sale-price" placeholder="支持算式，如20*1.5" inputmode="numeric">
+    </div>
+    <div class="form-group">
+     <label>数量：</label> <input type="number" id="sale-count" min="1" value="1" inputmode="numeric">
+    </div>
+    <div class="form-group">
+     <label>日期：</label> <input type="date" id="sale-date">
+    </div>
+    <div class="form-group">
+     <button onclick="addSale()">添加出货记录</button>
+    </div>
+    <div class="loading" id="sale-loading">加载中...</div>
+    <div class="table-wrap">
+     <table id="sale-table">
+      <thead>
+       <tr>
+        <th>鱼名称</th>
+        <th>售价(元)</th>
+        <th>数量</th>
+        <th>出货收入(元)</th>
+        <th>日期</th>
+        <th>操作</th>
+       </tr>
+      </thead>
+      <tbody></tbody>
+     </table>
+    </div>
+   </div>
+  </div>
+  <!-- 死亡弹窗 -->
+  <div class="modal" id="deathModal">
+   <div class="modal-content">
+    <h3 style="text-align: center;">输入死亡数量</h3>
+    <input type="number" class="modal-input" id="deathCount" min="1" placeholder="请输入数量" inputmode="numeric">
+    <div class="modal-btn-group">
+     <button class="modal-btn confirm-btn" onclick="confirmDeath()">确认</button>
+     <button class="modal-btn cancel-btn" onclick="closeModal()">取消</button>
+    </div>
+   </div>
+  </div>
+
+  <script>
+    // ========== 数据存储（原有） ==========
+    let purchaseData = JSON.parse(localStorage.getItem('purchaseData')) || [];
+    let saleData = JSON.parse(localStorage.getItem('saleData')) || [];
+    let stockData = JSON.parse(localStorage.getItem('stockData')) || [];
+    let selectedStockIds = [];
+    let currentStockId = '';
+    let debounceTimer = null;
+    let originalPurchaseData = [...purchaseData];
+    let originalSaleData = [...saleData];
+    let originalStockData = [...stockData];
+
+    // ========== WPS同步协同核心配置（修改：本地Excel版） ==========
+    // 修改2：优先从localStorage读取状态，确保页面刷新后状态不丢失
+    let wpsOnlineFileCreated = localStorage.getItem('wpsOnlineFileCreated') === 'true'; 
+    const WPS_ONLINE_FILE_NAME = '海水鱼进销存_同步协同表格.xlsx'; // 固定文件名，便于识别
+
+    // 新增：同步进货数据到库存的辅助函数（核心修复）
+    function syncPurchaseToStock() {
+      try {
+        // 清空原有库存，重新从进货数据生成（避免重复）
+        stockData = [];
+        
+        // 遍历所有进货记录，生成对应的库存记录
+        purchaseData.forEach(item => {
+          if (!item.name || item.count <= 0) return; // 跳过无效记录
+          
+          // 检查是否已有相同名称+单价的库存记录
+          const stockIndex = stockData.findIndex(i => i.name === item.name && i.price === item.price);
+          
+          if (stockIndex > -1) {
+            // 已有记录，累加数量
+            stockData[stockIndex].count += item.count;
+          } else {
+            // 无记录，新增库存项
+            stockData.push({
+              stockId: item.purchaseId || generateId(),
+              name: item.name,
+              price: item.price,
+              count: item.count,
+              date: item.date
+            });
+          }
+        });
+        
+        // 扣除已出货的数量（保持库存准确性）
+        saleData.forEach(saleItem => {
+          let saleLeft = saleItem.count;
+          // 按进货日期排序，先进先出
+          const sortedStock = [...stockData].sort((a, b) => new Date(a.date) - new Date(b.date));
+          
+          for (let i = 0; i < sortedStock.length && saleLeft > 0; i++) {
+            if (sortedStock[i].name !== saleItem.name) continue;
+            
+            const reduce = Math.min(saleLeft, sortedStock[i].count);
+            sortedStock[i].count -= reduce;
+            saleLeft -= reduce;
+            
+            if (sortedStock[i].count <= 0) {
+              sortedStock.splice(i, 1);
+              i--; // 修正索引
+            }
+          }
+          
+          // 更新库存数据
+          stockData = sortedStock;
+        });
+        
+        originalStockData = [...stockData];
+        saveData();
+      } catch (e) {
+        console.error('同步进货到库存失败：', e);
+        alert('数据同步出错，请刷新页面重试');
+      }
+    }
+
+    // ========== 核心修复：强化文件覆盖逻辑的Excel导出函数 ==========
+    // 标准化的Excel导出函数（供创建/同步/数据统计页面调用）
+    function standardExportToExcel(isSync = false) {
+      try {
+        const wb = XLSX.utils.book_new();
+        // 进货数据
+        const purchaseSheetData = purchaseData.map(item => ({
+          鱼名称: item.name || "",
+          单价: item.price ? item.price.toFixed(2) : "0.00",
+          数量: item.count || 0,
+          运费: item.freight ? item.freight.toFixed(2) : "0.00",
+          进货成本: item.cost ? item.cost.toFixed(2) : "0.00",
+          进货日期: item.date || "",
+          记录ID: item.purchaseId || ""
+        }));
+        const purchaseWs = XLSX.utils.json_to_sheet(purchaseSheetData);
+        XLSX.utils.book_append_sheet(wb, purchaseWs, "进货记录");
+        
+        // 出货数据
+        const saleSheetData = saleData.map(item => ({
+          鱼名称: item.name || "",
+          售价: item.price ? item.price.toFixed(2) : "0.00",
+          数量: item.count || 0,
+          出货收入: item.income ? item.income.toFixed(2) : "0.00",
+          出货日期: item.date || "",
+          记录ID: item.saleId || ""
+        }));
+        const saleWs = XLSX.utils.json_to_sheet(saleSheetData);
+        XLSX.utils.book_append_sheet(wb, saleWs, "出货记录");
+        
+        // 库存数据
+        const stockSheetData = stockData.map(item => ({
+          鱼名称: item.name || "",
+          单价: item.price ? item.price.toFixed(2) : "0.00",
+          库存数量: item.count || 0,
+          进货日期: item.date || "",
+          库存ID: item.stockId || ""
+        }));
+        const stockWs = XLSX.utils.json_to_sheet(stockSheetData);
+        XLSX.utils.book_append_sheet(wb, stockWs, "库存数据");
+        
+        // ========== 关键优化：强制文件覆盖逻辑 ==========
+        // 1. 先清除可能存在的同名文件下载缓存
+        const oldLink = document.querySelector(`a[download="${WPS_ONLINE_FILE_NAME}"]`);
+        if (oldLink) {
+          URL.revokeObjectURL(oldLink.href);
+          document.body.removeChild(oldLink);
+        }
+        
+        // 2. 强制使用固定文件名，浏览器会自动覆盖同名文件
+        // 对于Chrome/Firefox等主流浏览器，同名文件会直接覆盖下载文件夹中的原有文件
+        XLSX.writeFile(wb, WPS_ONLINE_FILE_NAME, { 
+          bookType: 'xlsx',
+          type: 'file',
+          // 额外配置确保文件格式兼容WPS
+          cellStyles: true,
+          sheetStubs: true
+        });
+        
+        // 记录最后同步时间
+        if (isSync) {
+          localStorage.setItem('lastSyncTime', new Date().toLocaleString());
+        }
+        
+        return true;
+      } catch (e) {
+        alert(`Excel导出失败：${e.message}`);
+        console.error('Excel导出错误：', e);
+        return false;
+      }
+    }
+
+    // 1. 创建本地WPS同步协同Excel表格（核心修复：复用标准化导出逻辑）
+    function createWpsOnlineFile() {
+      try {
+        // 提示用户文件将被创建
+        const confirmCreate = confirm(`即将创建本地Excel表格：
+文件名：${WPS_ONLINE_FILE_NAME}
+后续「同步导出数据」操作会直接覆盖此文件！
+是否继续创建？`);
+        
+        if (!confirmCreate) return;
+        
+        // 直接调用标准化导出函数
+        const exportSuccess = standardExportToExcel(false);
+        if (!exportSuccess) return;
+        
+        // 更新状态和提示
+        wpsOnlineFileCreated = true;
+        document.getElementById('wps-status').innerText = `✅ 已创建本地Excel表格：${WPS_ONLINE_FILE_NAME}（已保存到电脑）`;
+        localStorage.setItem('wpsOnlineFileCreated', 'true'); // 本地存储标记
+        
+        // 友好提示
+        alert(`✅ 本地Excel表格创建成功！
+文件已保存到您的电脑默认下载文件夹，文件名：${WPS_ONLINE_FILE_NAME}
+后续点击「同步导出数据」会直接覆盖此文件，更新为最新数据。`);
+      } catch (e) {
+        console.error('创建Excel表格失败：', e);
+        alert('创建表格失败，请重试');
+      }
+    }
+
+    // 新增：创建表格时手动导入Excel文件（直接初始化数据）
+    function importToNewWpsFile(event) {
+      try {
+        const file = event.target.files[0];
+        if (!file) return;
+        
+        const reader = new FileReader();
+        reader.onload = function(e) {
+          try {
+            const data = new Uint8Array(e.target.result);
+            const wb = XLSX.read(data, { type: 'array' });
+            
+            // 从导入的Excel初始化数据
+            purchaseData = [];
+            saleData = [];
+            
+            // 导入进货数据
+            if (wb.Sheets["进货记录"]) {
+              const purchaseDataFromExcel = XLSX.utils.sheet_to_json(wb.Sheets["进货记录"]);
+              purchaseData = purchaseDataFromExcel.map(item => ({
+                purchaseId: item.记录ID || generateId(),
+                name: item.鱼名称 || "",
+                price: parseFloat(item.单价) || 0,
+                count: parseInt(item.数量) || 0,
+                freight: parseFloat(item.运费) || 0,
+                cost: parseFloat(item.进货成本) || 0,
+                date: item.进货日期 || new Date().toISOString().split('T')[0]
+              })).filter(item => item.name && item.count > 0);
+            }
+            
+            // 导入出货数据
+            if (wb.Sheets["出货记录"]) {
+              const saleDataFromExcel = XLSX.utils.sheet_to_json(wb.Sheets["出货记录"]);
+              saleData = saleDataFromExcel.map(item => ({
+                saleId: item.记录ID || generateId(),
+                name: item.鱼名称 || "",
+                price: parseFloat(item.售价) || 0,
+                count: parseInt(item.数量) || 0,
+                income: parseFloat(item.出货收入) || 0,
+                date: item.出货日期 || new Date().toISOString().split('T')[0]
+              })).filter(item => item.name && item.count > 0);
+            }
+            
+            // 核心修复：导入后同步进货数据到库存
+            syncPurchaseToStock();
+            
+            // 更新状态和存储
+            wpsOnlineFileCreated = true;
+            originalPurchaseData = [...purchaseData];
+            originalSaleData = [...saleData];
+            originalStockData = [...stockData];
+            localStorage.setItem('wpsOnlineFileCreated', 'true');
+            saveData();
+            
+            // 重新渲染
+            renderAllTables();
+            updateStats();
+            document.getElementById('wps-status').innerText = `✅ 已从Excel导入数据并创建本地表格：${WPS_ONLINE_FILE_NAME}`;
+            
+            alert(`成功导入Excel数据并创建本地表格！
+- 进货记录：${purchaseData.length} 条
+- 出货记录：${saleData.length} 条
+- 库存记录：${stockData.length} 条
+后续「同步导出数据」会直接覆盖此文件。`);
+            
+            event.target.value = '';
+          } catch (e) {
+            alert(`导入失败：${e.message}，请确保Excel格式正确`);
+            console.error('Excel导入错误：', e);
+          }
+        };
+        reader.readAsArrayBuffer(file);
+      } catch (e) {
+        console.error('导入Excel文件失败：', e);
+        alert('文件导入出错，请重试');
+      }
+    };
+
+    // 2. 同步导出数据（强化文件覆盖逻辑）
+    function syncToWpsOnline() {
+      try {
+        if (!wpsOnlineFileCreated) {
+          alert('请先创建本地Excel表格');
+          return;
+        }
+        
+        // 关键：明确提示用户文件将被覆盖
+        const confirmSync = confirm(`⚠️ 同步导出提示：
+此操作将直接覆盖您电脑下载文件夹中的文件：
+${WPS_ONLINE_FILE_NAME}
+原有文件内容将被最新数据完全替换！
+是否继续同步？`);
+        
+        if (!confirmSync) return;
+        
+        // 禁用同步按钮，防止重复点击
+        const syncBtn = document.getElementById('syncWpsBtn');
+        syncBtn.disabled = true;
+        syncBtn.textContent = '🔄 同步中...';
+        
+        // 调用标准化导出函数（标记为同步操作）
+        const exportSuccess = standardExportToExcel(true);
+        
+        // 恢复按钮状态
+        syncBtn.disabled = false;
+        syncBtn.textContent = '🔄 同步导出数据';
+        
+        if (!exportSuccess) return;
+        
+        // 更新状态显示
+        const lastSyncTime = localStorage.getItem('lastSyncTime');
+        document.getElementById('wps-status').innerText = `✅ 已同步最新数据（最后同步：${lastSyncTime}）
+📁 文件：${WPS_ONLINE_FILE_NAME}（已覆盖更新）`;
+        
+        const alertMsg = `✅ 数据同步导出成功！
+📁 已覆盖您电脑中的文件：${WPS_ONLINE_FILE_NAME}
+📊 包含最新的进货、出货、库存数据
+⏰ 同步时间：${lastSyncTime}
+您可以直接打开此文件查看最新数据（无需重新下载）`;
+        alert(alertMsg);
+        
+      } catch (e) {
+        // 恢复按钮状态
+        const syncBtn = document.getElementById('syncWpsBtn');
+        if (syncBtn) {
+          syncBtn.disabled = false;
+          syncBtn.textContent = '🔄 同步导出数据';
+        }
+        
+        alert(`同步导出失败：${e.message}`);
+        console.error('同步Excel错误：', e);
+      }
+    }
+
+    // 3. 导入更新数据（从本地Excel文件导入数据到系统）
+    function viewWpsOnlineData() {
+      try {
+        if (!wpsOnlineFileCreated) {
+          alert('请先创建本地Excel表格');
+          return;
+        }
+        const alertMsg = `请选择您电脑中的Excel文件导入更新数据：
+📁 推荐文件：${WPS_ONLINE_FILE_NAME}
+✅ 导入后系统数据会更新为Excel中的最新数据`;
+        alert(alertMsg);
+        // 触发文件选择框（直接导入）
+        document.getElementById('excel-import-input').click();
+      } catch (e) {
+        alert(`导入更新数据失败：${e.message}`);
+        console.error('导入Excel数据错误：', e);
+      }
+    }
+
+    // ========== WPS同步协同：Excel导入导出（统一为标准化函数） ==========
+    // 数据统计页面的Excel导出按钮调用此函数
+    function exportToExcel() {
+      try {
+        const exportSuccess = standardExportToExcel(false);
+        if (exportSuccess) {
+          // 同步更新创建状态（如果是首次导出）
+          if (!wpsOnlineFileCreated) {
+            wpsOnlineFileCreated = true;
+            localStorage.setItem('wpsOnlineFileCreated', 'true');
+            document.getElementById('wps-status').innerText = `✅ 已创建本地Excel表格：${WPS_ONLINE_FILE_NAME}`;
+          }
+          alert(`Excel导出成功！
+📁 文件已保存到您的电脑：${WPS_ONLINE_FILE_NAME}
+如果已有同名文件，已被新文件覆盖`);
+        }
+      } catch (e) {
+        console.error('导出Excel失败：', e);
+        alert('Excel导出失败，请重试');
+      }
+    }
+
+    // 从WPS编辑后的Excel导入数据（原有功能，用于查看）
+    function importFromExcel(event) {
+      try {
+        const file=event.target.files[0];
+        if (!file) return;
+        
+        const reader=new FileReader();
+        reader.onload=function(e) {
+          try {
+            const data=new Uint8Array(e.target.result);
+            const wb=XLSX.read(data, { type: 'array' });
+            
+            // 清空原有数据
+            purchaseData = [];
+            saleData = [];
+            
+            // 导入进货数据
+            if (wb.Sheets["进货记录"]) {
+              const purchaseDataFromExcel=XLSX.utils.sheet_to_json(wb.Sheets["进货记录"]);
+              purchaseData=purchaseDataFromExcel.map(item => ({
+                purchaseId: item.记录ID || generateId(),
+                name: item.鱼名称 || "",
+                price: parseFloat(item.单价) || 0,
+                count: parseInt(item.数量) || 0,
+                freight: parseFloat(item.运费) || 0,
+                cost: parseFloat(item.进货成本) || 0,
+                date: item.进货日期 || new Date().toISOString().split('T')[0]
+              })).filter(item => item.name && item.count > 0);
+            }
+            
+            // 导入出货数据
+            if (wb.Sheets["出货记录"]) {
+              const saleDataFromExcel=XLSX.utils.sheet_to_json(wb.Sheets["出货记录"]);
+              saleData=saleDataFromExcel.map(item => ({
+                saleId: item.记录ID || generateId(),
+                name: item.鱼名称 || "",
+                price: parseFloat(item.售价) || 0,
+                count: parseInt(item.数量) || 0,
+                income: parseFloat(item.出货收入) || 0,
+                date: item.出货日期 || new Date().toISOString().split('T')[0]
+              })).filter(item => item.name && item.count > 0);
+            }
+            
+            // 核心修复：导入后同步进货数据到库存
+            syncPurchaseToStock();
+            
+            // 更新原始数据和本地存储
+            originalPurchaseData = [...purchaseData];
+            originalSaleData = [...saleData];
+            originalStockData = [...stockData];
+            saveData();
+            
+            // 重新渲染表格和统计
+            renderAllTables();
+            updateStats();
+            
+            alert(`Excel数据导入成功！
+- 进货记录：${purchaseData.length} 条
+- 出货记录：${saleData.length} 条
+- 库存记录：${stockData.length} 条`);
+            event.target.value = '';
+          } catch (e) {
+            alert(`导入失败：${e.message}，请确保Excel格式正确`);
+            console.error('Excel导入错误：', e);
+          }
+        };
+        reader.readAsArrayBuffer(file);
+      } catch (e) {
+        console.error('导入Excel数据失败：', e);
+        alert('数据导入出错，请重试');
+      }
+    }
+
+    // ========== 原有功能保留（完整保留，不改动） ==========
+    function saveData() {
+      try {
+        localStorage.setItem('purchaseData', JSON.stringify(purchaseData));
+        localStorage.setItem('saleData', JSON.stringify(saleData));
+        localStorage.setItem('stockData', JSON.stringify(stockData));
+        
+        // 大数据量提醒
+        const total=purchaseData.length+saleData.length+stockData.length;
+        if (total > 100 && !localStorage.getItem('backupTip')) {
+          alert('数据量较大，建议导出Excel备份！');
+          localStorage.setItem('backupTip', '1');
+        }
+      } catch (e) {
+        alert('数据存储失败，请清理存储空间');
+        console.error('数据存储错误：', e);
+      }
+    }
+
+    // 核心修复：重写switchTab函数，解决event对象未定义问题
+    function switchTab(tabId) {
+      try {
+        // 移除所有激活状态
+        document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+        document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
+        
+        // 激活目标标签页
+        document.querySelector(`.tab-btn[data-tab="${tabId}"]`).classList.add('active');
+        document.getElementById(tabId).classList.add('active');
+      } catch (e) {
+        console.error('切换标签页失败：', e);
+      }
+    }
+
+    function calcExpr(expr) {
+      try {
+        const safeExpr=expr.replace(/[^0-9\+\-\*\/\(\)\.]/g, '');
+        return safeExpr ? Function(`'use strict';return (${safeExpr})`)() : 0;
+      } catch (e) {
+        alert('算式格式错误');
+        console.error('算式计算错误：', e);
+        return 0;
+      }
+    }
+
+    function generateId() {
+      return Date.now()+Math.floor(Math.random()*1000);
+    }
+
+    function searchStock() {
+      try {
+        const keyword=document.getElementById('stock-search').value.trim().toLowerCase();
+        document.getElementById('stock-loading').classList.add('show');
+        clearTimeout(debounceTimer);
+        debounceTimer=setTimeout(() => {
+          const filtered=stockData.filter(item => item.name.toLowerCase().includes(keyword));
+          renderFilteredStockTable(filtered);
+          document.getElementById('stock-loading').classList.remove('show');
+        }, 300);
+      } catch (e) {
+        console.error('搜索库存失败：', e);
+        document.getElementById('stock-loading').classList.remove('show');
+      }
+    }
+
+    function filterPurchaseByDate() {
+      try {
+        const start=document.getElementById('purchase-start-date').value;
+        const end=document.getElementById('purchase-end-date').value;
+        if (!start || !end) return alert('请选择日期范围');
+        document.getElementById('purchase-loading').classList.add('show');
+        setTimeout(() => {
+          const filtered=purchaseData.filter(item => item.date >= start && item.date <= end);
+          renderFilteredPurchaseTable(filtered);
+          document.getElementById('purchase-loading').classList.remove('show');
+        }, 300);
+      } catch (e) {
+        console.error('筛选进货数据失败：', e);
+        document.getElementById('purchase-loading').classList.remove('show');
+      }
+    }
+
+    function resetPurchaseFilter() {
+      try {
+        document.getElementById('purchase-start-date').value = '';
+        document.getElementById('purchase-end-date').value = '';
+        renderPurchaseTable();
+      } catch (e) {
+        console.error('重置进货筛选失败：', e);
+      }
+    }
+
+    function filterSaleByDate() {
+      try {
+        const start=document.getElementById('sale-start-date').value;
+        const end=document.getElementById('sale-end-date').value;
+        if (!start || !end) return alert('请选择日期范围');
+        document.getElementById('sale-loading').classList.add('show');
+        setTimeout(() => {
+          const filtered=saleData.filter(item => item.date >= start && item.date <= end);
+          renderFilteredSaleTable(filtered);
+          document.getElementById('sale-loading').classList.remove('show');
+        }, 300);
+      } catch (e) {
+        console.error('筛选出货数据失败：', e);
+        document.getElementById('sale-loading').classList.remove('show');
+      }
+    }
+
+    function resetSaleFilter() {
+      try {
+        document.getElementById('sale-start-date').value = '';
+        document.getElementById('sale-end-date').value = '';
+        renderSaleTable();
+      } catch (e) {
+        console.error('重置出货筛选失败：', e);
+      }
+    }
+
+    function renderFilteredPurchaseTable(filtered) {
+      try {
+        const tbody=document.querySelector('#purchase-table tbody');
+        tbody.innerHTML = '';
+        const frag=document.createDocumentFragment();
+        if (filtered.length === 0) {
+          const tr=document.createElement('tr');
+          tr.innerHTML = '<td colspan="7" style="padding:20px;">暂无匹配数据</td>';
+          frag.appendChild(tr);
+        } else {
+          filtered.forEach(item => {
+            const tr=document.createElement('tr');
+            tr.innerHTML = `
+              <td>${item.name}</td>
+              <td>${item.price.toFixed(2)}</td>
+              <td>${item.count}</td>
+              <td>${item.freight.toFixed(2)}</td>
+              <td>${item.cost.toFixed(2)}</td>
+              <td>${item.date}</td>
+              <td>
+                <button class="action-btn edit-btn" onclick="editPurchase(${item.purchaseId})">编辑</button>
+                <button class="action-btn delete-btn" onclick="deletePurchase(${item.purchaseId})">删除</button>
+              </td>
+            `;
+            frag.appendChild(tr);
+          });
+        }
+        tbody.appendChild(frag);
+      } catch (e) {
+        console.error('渲染进货表格失败：', e);
+      }
+    }
+
+    function renderFilteredSaleTable(filtered) {
+      try {
+        const tbody=document.querySelector('#sale-table tbody');
+        tbody.innerHTML = '';
+        const frag=document.createDocumentFragment();
+        if (filtered.length === 0) {
+          const tr=document.createElement('tr');
+          tr.innerHTML = '<td colspan="6" style="padding:20px;">暂无匹配数据</td>';
+          frag.appendChild(tr);
+        } else {
+          filtered.forEach(item => {
+            const tr=document.createElement('tr');
+            tr.innerHTML = `
+              <td>${item.name}</td>
+              <td>${item.price.toFixed(2)}</td>
+              <td>${item.count}</td>
+              <td>${item.income.toFixed(2)}</td>
+              <td>${item.date}</td>
+              <td>
+                <button class="action-btn edit-btn" onclick="editSale(${item.saleId})">编辑</button>
+                <button class="action-btn delete-btn" onclick="deleteSale(${item.saleId})">删除</button>
+              </td>
+            `;
+            frag.appendChild(tr);
+          });
+        }
+        tbody.appendChild(frag);
+      } catch (e) {
+        console.error('渲染出货表格失败：', e);
+      }
+    }
+
+    function renderFilteredStockTable(filtered) {
+      try {
+        const tbody=document.querySelector('#stock-table tbody');
+        tbody.innerHTML = '';
+        const frag=document.createDocumentFragment();
+        if (filtered.length === 0) {
+          const tr=document.createElement('tr');
+          tr.innerHTML = '<td colspan="5" style="padding:20px;">暂无匹配数据</td>';
+          frag.appendChild(tr);
+        } else {
+          filtered.forEach(item => {
+            const tr=document.createElement('tr');
+            tr.innerHTML = `
+              <td>${item.date}</td>
+              <td><input type="checkbox" onchange="selectStock(${item.stockId}, this)"> ${item.name}</td>
+              <td>${item.price.toFixed(2)}</td>
+              <td>${item.count}</td>
+              <td>
+                <button class="action-btn death-btn" onclick="markDeath(${item.stockId})">死亡</button>
+                <button class="action-btn sell-btn" onclick="sellStock(${item.stockId})">卖出</button>
+              </td>
+            `;
+            frag.appendChild(tr);
+          });
+        }
+        tbody.appendChild(frag);
+      } catch (e) {
+        console.error('渲染库存表格失败：', e);
+      }
+    }
+
+    function renderPurchaseTable() {
+      renderFilteredPurchaseTable(purchaseData);
+    }
+
+    function renderSaleTable() {
+      renderFilteredSaleTable(saleData);
+    }
+
+    function renderStockTable() {
+      renderFilteredStockTable(stockData);
+    }
+
+    function renderAllTables() {
+      try {
+        renderPurchaseTable();
+        renderSaleTable();
+        renderStockTable();
+      } catch (e) {
+        console.error('渲染所有表格失败：', e);
+      }
+    }
+
+    function exportData() {
+      try {
+        const data={ purchaseData, saleData, stockData };
+        const blob=new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+        const a=document.createElement('a');
+        a.href=URL.createObjectURL(blob);
+        a.download = `海水鱼进销存_${new Date().getTime()}.json`;
+        a.click();
+        URL.revokeObjectURL(a.href);
+        alert('JSON数据导出成功');
+      } catch (e) {
+        console.error('导出JSON失败：', e);
+        alert('数据导出失败，请重试');
+      }
+    }
+
+    function importData(event) {
+      try {
+        const file=event.target.files[0];
+        if (!file) return;
+        const reader=new FileReader();
+        reader.onload=(e) => {
+          try {
+            const data=JSON.parse(e.target.result);
+            purchaseData=data.purchaseData || [];
+            saleData=data.saleData || [];
+            
+            // 核心修复：导入JSON后也同步进货到库存
+            syncPurchaseToStock();
+            
+            originalPurchaseData = [...purchaseData];
+            originalSaleData = [...saleData];
+            originalStockData = [...stockData];
+            saveData();
+            renderAllTables();
+            updateStats();
+            alert('JSON数据导入成功');
+          } catch (e) {
+            alert('导入失败，请检查文件格式');
+            console.error('JSON导入错误：', e);
+          }
+        };
+        reader.readAsText(file);
+        event.target.value = '';
+      } catch (e) {
+        console.error('导入JSON数据失败：', e);
+        alert('数据导入出错，请重试');
+      }
+    }
+
+    function clearAllData() {
+      try {
+        if (!confirm('确定清空所有数据？此操作不可恢复！')) return;
+        purchaseData = [];
+        saleData = [];
+        stockData = [];
+        originalPurchaseData = [];
+        originalSaleData = [];
+        originalStockData = [];
+        selectedStockIds = [];
+        localStorage.removeItem('backupTip');
+        saveData();
+        renderAllTables();
+        updateStats();
+        document.getElementById('batch-death-btn').classList.remove('show');
+        alert('数据已清空');
+      } catch (e) {
+        console.error('清空数据失败：', e);
+        alert('清空数据出错，请重试');
+      }
+    }
+
+    function openModal(stockId) {
+      try {
+        currentStockId=stockId;
+        const item=stockData.find(i => i.stockId === stockId);
+        if (item) document.getElementById('deathCount').max=item.count;
+        document.getElementById('deathModal').style.display = 'flex';
+      } catch (e) {
+        console.error('打开死亡弹窗失败：', e);
+      }
+    }
+
+    function closeModal() {
+      try {
+        document.getElementById('deathModal').style.display = 'none';
+        currentStockId = '';
+      } catch (e) {
+        console.error('关闭弹窗失败：', e);
+      }
+    }
+
+    function confirmDeath() {
+      try {
+        const count=parseInt(document.getElementById('deathCount').value);
+        if (isNaN(count) || count < 1) return alert('请输入有效数量');
+        const index=stockData.findIndex(i => i.stockId === currentStockId);
+        if (index === -1) return closeModal();
+        
+        if (count >= stockData[index].count) {
+          stockData.splice(index, 1);
+        } else {
+          stockData[index].count -= count;
+        }
+        originalStockData = [...stockData];
+        saveData();
+        renderStockTable();
+        updateStats();
+        closeModal();
+        alert(`成功标记 ${count} 条死亡记录`);
+      } catch (e) {
+        console.error('确认死亡数量失败：', e);
+        alert('操作失败，请重试');
+      }
+    }
+
+    function addPurchase() {
+      try {
+        const name=document.getElementById('purchase-name').value.trim();
+        const priceExpr=document.getElementById('purchase-price').value.trim();
+        const count=parseInt(document.getElementById('purchase-count').value);
+        const freightExpr=document.getElementById('purchase-freight').value.trim() || '0';
+        const date=document.getElementById('purchase-date').value || new Date().toISOString().split('T')[0];
+        
+        if (!name || !priceExpr || isNaN(count)) return alert('请填写完整信息');
+        
+        const price=calcExpr(priceExpr);
+        const freight=calcExpr(freightExpr);
+        const cost=(price*count)+freight;
+        const purchaseId=generateId();
+        
+        purchaseData.push({ purchaseId, name, price, count, freight, cost, date });
+        originalPurchaseData = [...purchaseData];
+        
+        // 手动添加进货时也调用同步函数，确保逻辑统一
+        syncPurchaseToStock();
+        
+        saveData();
+        renderPurchaseTable();
+        renderStockTable();
+        updateStats();
+        
+        document.getElementById('purchase-name').value = '';
+        document.getElementById('purchase-price').value = '';
+        document.getElementById('purchase-count').value = 1;
+        document.getElementById('purchase-freight').value = '';
+      } catch (e) {
+        console.error('添加进货记录失败：', e);
+        alert('添加记录失败，请重试');
+      }
+    }
+
+    function editPurchase(id) {
+      try {
+        const item=purchaseData.find(p => p.purchaseId === id);
+        if (!item) return;
+        document.getElementById('purchase-name').value=item.name;
+        document.getElementById('purchase-price').value=item.price;
+        document.getElementById('purchase-count').value=item.count;
+        document.getElementById('purchase-freight').value=item.freight;
+        document.getElementById('purchase-date').value=item.date;
+        deletePurchase(id, true);
+      } catch (e) {
+        console.error('编辑进货记录失败：', e);
+        alert('编辑记录失败，请重试');
+      }
+    }
+
+    function deletePurchase(id, isEdit=false) {
+      try {
+        if (!isEdit && !confirm('删除进货记录会扣减库存，确定吗？')) return;
+        const index=purchaseData.findIndex(p => p.purchaseId === id);
+        if (index === -1) return;
+        const deleted=purchaseData.splice(index, 1)[0];
+        originalPurchaseData = [...purchaseData];
+        
+        // 删除进货后同步库存
+        syncPurchaseToStock();
+        
+        saveData();
+        renderPurchaseTable();
+        renderStockTable();
+        updateStats();
+        if (!isEdit) alert('进货记录已删除');
+      } catch (e) {
+        console.error('删除进货记录失败：', e);
+        alert('删除记录失败，请重试');
+      }
+    }
+
+    function addSale() {
+      try {
+        const name=document.getElementById('sale-name').value.trim();
+        const priceExpr=document.getElementById('sale-price').value.trim();
+        const count=parseInt(document.getElementById('sale-count').value);
+        const date=document.getElementById('sale-date').value || new Date().toISOString().split('T')[0];
+        
+        if (!name || !priceExpr || isNaN(count)) return alert('请填写完整信息');
+        
+        const price=calcExpr(priceExpr);
+        const income=price*count;
+        const saleId=generateId();
+        
+        let stockLeft=count;
+        const newStock = [...stockData].sort((a, b) => new Date(a.date)-new Date(b.date));
+        
+        for (let i=0; i < newStock.length && stockLeft > 0; i++) {
+          if (newStock[i].name !== name) continue;
+          const reduce=Math.min(stockLeft, newStock[i].count);
+          newStock[i].count -= reduce;
+          stockLeft -= reduce;
+          if (newStock[i].count <= 0) newStock.splice(i, 1);
+        }
+        
+        if (stockLeft > 0) return alert('库存不足');
+        
+        saleData.push({ saleId, name, price, count, income, date });
+        originalSaleData = [...saleData];
+        stockData=newStock;
+        originalStockData = [...stockData];
+        
+        saveData();
+        renderSaleTable();
+        renderStockTable();
+        updateStats();
+        
+        document.getElementById('sale-name').value = '';
+        document.getElementById('sale-price').value = '';
+        document.getElementById('sale-count').value = 1;
+      } catch (e) {
+        console.error('添加出货记录失败：', e);
+        alert('添加记录失败，请重试');
+      }
+    }
+
+    function editSale(id) {
+      try {
+        const item=saleData.find(s => s.saleId === id);
+        if (!item) return;
+        document.getElementById('sale-name').value=item.name;
+        document.getElementById('sale-price').value=item.price;
+        document.getElementById('sale-count').value=item.count;
+        document.getElementById('sale-date').value=item.date;
+        deleteSale(id, true);
+      } catch (e) {
+        console.error('编辑出货记录失败：', e);
+        alert('编辑记录失败，请重试');
+      }
+    }
+
+    function deleteSale(id, isEdit=false) {
+      try {
+        if (!isEdit && !confirm('删除出货记录会恢复库存，确定吗？')) return;
+        const index=saleData.findIndex(s => s.saleId === id);
+        if (index === -1) return;
+        const deleted=saleData.splice(index, 1)[0];
+        originalSaleData = [...saleData];
+        
+        // 删除出货后重新同步库存
+        syncPurchaseToStock();
+        
+        saveData();
+        renderSaleTable();
+        renderStockTable();
+        updateStats();
+        if (!isEdit) alert('出货记录已删除');
+      } catch (e) {
+        console.error('删除出货记录失败：', e);
+        alert('删除记录失败，请重试');
+      }
+    }
+
+    function selectStock(id, el) {
+      try {
+        const index=selectedStockIds.indexOf(id);
+        if (index > -1) {
+          selectedStockIds.splice(index, 1);
+          el.closest('tr').style.backgroundColor = '';
+        } else {
+          selectedStockIds.push(id);
+          el.closest('tr').style.backgroundColor = '#e3f2fd';
+        }
+        document.getElementById('batch-death-btn').classList.toggle('show', selectedStockIds.length > 0);
+      } catch (e) {
+        console.error('选择库存失败：', e);
+      }
+    }
+
+    function markDeath(id) {
+      try {
+        openModal(id);
+      } catch (e) {
+        console.error('标记死亡失败：', e);
+        alert('操作失败，请重试');
+      }
+    }
+
+    function batchDeath() {
+      try {
+        if (selectedStockIds.length === 0) return;
+        const count=prompt('请输入每条记录要标记的死亡数量：', 1);
+        if (!count || isNaN(count) || count < 1) return;
+        const num=parseInt(count);
+        let success=0;
+        
+        for (let i=stockData.length-1; i >= 0; i--) {
+          if (selectedStockIds.includes(stockData[i].stockId)) {
+            if (stockData[i].count <= num) {
+              stockData.splice(i, 1);
+            } else {
+              stockData[i].count -= num;
+            }
+            success++;
+          }
+        }
+        
+        selectedStockIds = [];
+        originalStockData = [...stockData];
+        saveData();
+        renderStockTable();
+        updateStats();
+        document.getElementById('batch-death-btn').classList.remove('show');
+        alert(`成功处理 ${success} 条库存记录`);
+      } catch (e) {
+        console.error('批量标记死亡失败：', e);
+        alert('批量操作失败，请重试');
+      }
+    }
+
+    function sellStock(id) {
+      try {
+        const item=stockData.find(i => i.stockId === id);
+        if (item) {
+          document.getElementById('sale-name').value=item.name;
+          document.getElementById('sale-count').value=1;
+          switchTab('sale');
+        }
+      } catch (e) {
+        console.error('卖出库存失败：', e);
+        alert('操作失败，请重试');
+      }
+    }
+
+    function updateStats() {
+      try {
+        clearTimeout(debounceTimer);
+        debounceTimer=setTimeout(() => {
+          const totalPurchase=purchaseData.reduce((sum, item) => sum+item.cost, 0);
+          const totalSale=saleData.reduce((sum, item) => sum+item.income, 0);
+          const totalStock=stockData.reduce((sum, item) => sum+(item.price*item.count), 0);
+          const profit=totalSale-totalPurchase;
+          const netProfit=profit+totalStock;
+          
+          document.getElementById('total-purchase').textContent=totalPurchase.toFixed(2);
+          document.getElementById('total-sale').textContent=totalSale.toFixed(2);
+          document.getElementById('total-stock-value').textContent=totalStock.toFixed(2);
+          document.getElementById('total-profit').textContent=profit.toFixed(2);
+          document.getElementById('net-profit').textContent=netProfit.toFixed(2);
+        }, 100);
+      } catch (e) {
+        console.error('更新统计数据失败：', e);
+      }
+    }
+
+    // ========== 页面初始化（新增：读取WPS创建标记） ==========
+    window.onload=function() {
+      try {
+        // 初始化日期
+        document.getElementById('purchase-date').value=new Date().toISOString().split('T')[0];
+        document.getElementById('sale-date').value=new Date().toISOString().split('T')[0];
+        
+        // 初始化数据
+        purchaseData=Array.isArray(purchaseData) ? purchaseData : [];
+        saleData=Array.isArray(saleData) ? saleData : [];
+        stockData=Array.isArray(stockData) ? stockData : [];
+        originalPurchaseData = [...purchaseData];
+        originalSaleData = [...saleData];
+        originalStockData = [...stockData];
+        
+        // 初始化时同步一次进货到库存，确保数据一致
+        syncPurchaseToStock();
+        
+        // 更新WPS状态显示
+        if (wpsOnlineFileCreated) {
+          const lastSyncTime = localStorage.getItem('lastSyncTime');
+          let statusText = `✅ 已创建本地Excel表格：${WPS_ONLINE_FILE_NAME}`;
+          if (lastSyncTime) {
+            statusText += `（最后同步：${lastSyncTime}）`;
+          }
+          document.getElementById('wps-status').innerText = statusText;
+        }
+        
+        // 核心修复：绑定标签页点击事件
+        document.querySelectorAll('.tab-btn').forEach(btn => {
+          btn.addEventListener('click', function() {
+            switchTab(this.dataset.tab);
+          });
+        });
+        
+        // 绑定WPS按钮事件
+        const createBtn = document.getElementById('createWpsBtn');
+        const syncBtn = document.getElementById('syncWpsBtn');
+        const viewBtn = document.getElementById('viewWpsBtn');
+        
+        // 确保按钮存在再绑定
+        if (createBtn) createBtn.addEventListener('click', createWpsOnlineFile);
+        if (syncBtn) syncBtn.addEventListener('click', syncToWpsOnline);
+        if (viewBtn) viewBtn.addEventListener('click', viewWpsOnlineData);
+        
+        // 渲染表格
+        renderAllTables();
+        updateStats();
+      } catch (e) {
+        console.error('页面初始化失败：', e);
+        alert('系统初始化出错，请刷新页面重试');
+      }
+    };
+  </script>
+ </body>
+</html>
